@@ -15,9 +15,6 @@ ENV DEBIAN_FRONTEND noninteractive
 # Prepare directories
 WORKDIR /code
 
-# Copy everything
-COPY . ./
-
 # Install build dependencies
 RUN apt-get update && \
     apt-get install -y \
@@ -35,12 +32,16 @@ RUN apt-get update && \
 
 
 # Install CUDA
-RUN bash .github/workflows/cuda/Linux.sh ${CUDA_VERSION}
+COPY .github/workflows/cuda/Linux.sh /opt/install-cuda.sh
+RUN bash /opt/install-cuda.sh ${CUDA_VERSION}
 
 # Install libtorch
 RUN wget --no-check-certificate -nv https://download.pytorch.org/libtorch/cu"${CUDA_VERSION%%.*}"$(echo $CUDA_VERSION | cut -d'.' -f2)/libtorch-cxx11-abi-shared-with-deps-${TORCH_VERSION}%2Bcu"${CUDA_VERSION%%.*}"$(echo $CUDA_VERSION | cut -d'.' -f2).zip -O libtorch.zip && \
     unzip -q libtorch.zip -d . && \
     rm ./libtorch.zip
+
+# Copy everything
+COPY . ./
 
 # Configure and build \
 RUN source .github/workflows/cuda/Linux-env.sh cu"${CUDA_VERSION%%.*}"$(echo $CUDA_VERSION | cut -d'.' -f2) && \
